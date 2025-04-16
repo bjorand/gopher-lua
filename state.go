@@ -110,7 +110,7 @@ type Options struct {
 	// `CallStackSize` in order to minimize memory usage. This does incur a slight performance penalty.
 	MinimizeStackMemory bool
 	// Stdout is the output stream. If not set, it defaults to os.Stdout.
-	Stdout *os.File
+	Stdout io.Writer
 }
 
 /* }}} */
