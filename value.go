@@ -183,6 +183,7 @@ type LState struct {
 	Panic   func(*LState)
 	Dead    bool
 	Options Options
+	Stdout  *os.File
 
 	stop         int32
 	reg          *registry
