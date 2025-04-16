@@ -2070,6 +2070,7 @@ func (ls *LState) SetMx(mx int) {
 			if s.Alloc >= limit {
 				fmt.Fprintf(ls.Options.Stdout, "out of memory: %d>%d\n", s.Alloc, limit)
 				ls.Options.ExitFn(3)
+				return
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
