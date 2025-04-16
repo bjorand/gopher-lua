@@ -107,6 +107,8 @@ type Options struct {
 	MinimizeStackMemory bool
 	// Stdout is the output stream. If not set, it defaults to os.Stdout.
 	Stdout io.Writer
+	// Function to call when the Lua state exits. This function will be called with the exit code as an argument.
+	ExitFn func(int)
 }
 
 /* }}} */
@@ -1199,6 +1201,7 @@ func NewState(opts ...Options) *LState {
 			CallStackSize: CallStackSize,
 			RegistrySize:  RegistrySize,
 			Stdout:        os.Stdout,
+			ExitFn:        os.Exit,
 		})
 		ls.OpenLibs()
 	} else {
@@ -1218,6 +1221,9 @@ func NewState(opts ...Options) *LState {
 		}
 		if opts[0].Stdout == nil {
 			opts[0].Stdout = os.Stdout
+		}
+		if opts[0].ExitFn == nil {
+			opts[0].ExitFn = os.Exit
 		}
 		ls = newLState(opts[0])
 		if !opts[0].SkipOpenLibs {
@@ -2051,19 +2057,19 @@ func (ls *LState) XMoveTo(other *LState, n int) {
 
 /* GopherLua original APIs {{{ */
 
-// Set maximum memory size. This function can only be called from the main thread.
+// Set maximum memory size in KB. This function can only be called from the main thread.
 func (ls *LState) SetMx(mx int) {
 	if ls.Parent != nil {
 		ls.RaiseError("sub threads are not allowed to set a memory limit")
 	}
 	go func() {
-		limit := uint64(mx * 1024 * 1024) //MB
+		limit := uint64(mx * 1024) //KB
 		var s runtime.MemStats
 		for atomic.LoadInt32(&ls.stop) == 0 {
 			runtime.ReadMemStats(&s)
 			if s.Alloc >= limit {
-				fmt.Fprintln(ls.Options.Stdout, "out of memory")
-				os.Exit(3)
+				fmt.Fprintf(ls.Options.Stdout, "out of memory: %d>%d\n", s.Alloc, limit)
+				ls.Options.ExitFn(3)
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
