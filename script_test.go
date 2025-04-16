@@ -12,7 +12,7 @@ import (
 	"github.com/bjorand/gopher-lua/parse"
 )
 
-const maxMemory = 40
+const maxMemory = 40 * 1024
 
 var gluaTests []string = []string{
 	"base.lua",
