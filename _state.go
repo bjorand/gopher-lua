@@ -105,6 +105,8 @@ type Options struct {
 	// If `MinimizeStackMemory` is set, the call stack will be automatically grown or shrank up to a limit of
 	// `CallStackSize` in order to minimize memory usage. This does incur a slight performance penalty.
 	MinimizeStackMemory bool
+	// Stdout is the output stream. If not set, it defaults to os.Stdout.
+	Stdout *os.File
 }
 
 /* }}} */
@@ -1196,6 +1198,7 @@ func NewState(opts ...Options) *LState {
 		ls = newLState(Options{
 			CallStackSize: CallStackSize,
 			RegistrySize:  RegistrySize,
+			Stdout:        os.Stdout,
 		})
 		ls.OpenLibs()
 	} else {
@@ -1212,6 +1215,9 @@ func NewState(opts ...Options) *LState {
 			if opts[0].RegistryGrowStep < 1 {
 				opts[0].RegistryGrowStep = RegistryGrowStep
 			}
+		}
+		if opts[0].Stdout == nil {
+			opts[0].Stdout = os.Stdout
 		}
 		ls = newLState(opts[0])
 		if !opts[0].SkipOpenLibs {
@@ -2056,7 +2062,7 @@ func (ls *LState) SetMx(mx int) {
 		for atomic.LoadInt32(&ls.stop) == 0 {
 			runtime.ReadMemStats(&s)
 			if s.Alloc >= limit {
-				fmt.Fprintln(ls.Stdout, "out of memory")
+				fmt.Fprintln(ls.Options.Stdout, "out of memory")
 				os.Exit(3)
 			}
 			time.Sleep(100 * time.Millisecond)
