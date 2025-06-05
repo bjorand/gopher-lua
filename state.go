@@ -63,6 +63,14 @@ const (
 	ApiErrorPanic
 )
 
+type ExitError struct {
+	Code int
+}
+
+func (e ExitError) Error() string {
+	return fmt.Sprintf("Lua exit with code %d", e.Code)
+}
+
 /* }}} */
 
 /* ResumeState {{{ */
@@ -2072,6 +2080,10 @@ func (ls *LState) PCall(nargs, nret int, errfunc *LFunction) (err error) {
 		ls.hasErrorFunc = false
 		rcv := recover()
 		if rcv != nil {
+			if exitErr, ok := rcv.(*ExitError); ok {
+				err = *exitErr
+				return
+			}
 			if _, ok := rcv.(*ApiError); !ok {
 				err = newApiErrorS(ApiErrorPanic, fmt.Sprint(rcv))
 				if ls.Options.IncludeGoStackTrace {
